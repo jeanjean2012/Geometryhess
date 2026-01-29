@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mini Geometry Dash</title>
+<style>
+body {
+  margin: 0;
+  font-family: sans-serif;
+  text-align: center;
+  background-color: #222;
+  color: white;
+}
+#gameCanvas {
+  display: block;
+  margin: auto;
+  width: 90vw;
+  height: 60vh;
+  background-color: #111;
+  border: 2px solid #fff;
+}
+button {
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+<h1>Mini Geometry Dash</h1>
+<button id="playBtn">Jouer</button>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let width = canvas.width = canvas.clientWidth;
+let height = canvas.height = canvas.clientHeight;
+
+let cube = { x: 50, y: height - 50, size: 30, yVel: 0, gravity: 0.8, jump: -12 };
+let obstacles = [];
+let speed = 4;
+let score = 0;
+let gameOver = false;
+
+// Générer obstacles
+function spawnObstacle() {
+    let size = 30 + Math.random()*20;
+    obstacles.push({ x: width, y: height - size, w: size, h: size });
+}
+
+// Contrôle
+document.addEventListener("keydown", e => {
+    if(e.code === "Space" || e.code === "ArrowUp"){
+        if(cube.y >= height - cube.size) cube.yVel = cube.jump;
+    }
+});
+
+// Boucle principale
+function animate() {
+    if(gameOver) return;
+    requestAnimationFrame(animate);
+    
+    ctx.clearRect(0,0,width,height);
+
+    // Cube
+    cube.yVel += cube.gravity;
+    cube.y += cube.yVel;
+    if(cube.y > height - cube.size) {
+        cube.y = height - cube.size;
+        cube.yVel = 0;
+    }
+    ctx.fillStyle = "#00ff00";
+    ctx.fillRect(cube.x, cube.y, cube.size, cube.size);
+
+    // Obstacles
+    for(let i = 0; i < obstacles.length; i++){
+        obstacles[i].x -= speed;
+        ctx.fillStyle = "#ff0000";
+        ctx.fillRect(obstacles[i].x, obstacles[i].y, obstacles[i].w, obstacles[i].h);
+
+        // Collision
+        if(cube.x < obstacles[i].x + obstacles[i].w &&
+           cube.x + cube.size > obstacles[i].x &&
+           cube.y < obstacles[i].y + obstacles[i].h &&
+           cube.y + cube.size > obstacles[i].y){
+            gameOver = true;
+            alert("Game Over ! Score : " + score);
+            location.reload();
+        }
+
+        // Score
+        if(obstacles[i].x + obstacles[i].w < cube.x && !obstacles[i].passed){
+            score++;
+            obstacles[i].passed = true;
+        }
+    }
+
+    // Supprimer obstacles sortis
+    obstacles = obstacles.filter(o => o.x + o.w > 0);
+
+    // Spawn aléatoire
+    if(Math.random() < 0.02) spawnObstacle();
+
+    // Affichage score
+    ctx.fillStyle = "#fff";
+    ctx.font = "20px Arial";
+    ctx.fillText("Score: " + score, 10, 30);
+}
+
+// Bouton jouer
+document.getElementById("playBtn").addEventListener("click", () => {
+    cube.y = height - cube.size;
+    cube.yVel = 0;
+    obstacles = [];
+    score = 0;
+    gameOver = false;
+    animate();
+});
+</script>
+</body>
+</html>
